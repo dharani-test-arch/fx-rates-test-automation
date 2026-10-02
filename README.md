@@ -59,3 +59,4 @@ and merges shard reports into a single HTML report.
 
 Inspired by the Apollo/React getting-started example in
 [Ebazhanov/react-graphql-example](https://github.com/Ebazhanov/react-graphql-example).
+=======
