@@ -1,0 +1,8 @@
+node_modules
+dist
+.DS_Store
+# Playwright
+tests/e2e/test-results
+tests/e2e/playwright-report
+tests/e2e/blob-report
+tests/e2e/all-blob-reports
