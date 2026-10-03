@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // The browser always talks to /graphql on its own origin; Vite forwards it to the
@@ -14,4 +14,9 @@ export default defineConfig({
   plugins: [react()],
   server: { proxy },
   preview: { proxy },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    css: false,
+  },
 });

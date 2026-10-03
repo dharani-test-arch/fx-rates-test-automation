@@ -7,7 +7,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
-  reporter: isCI ? [['blob'], ['list']] : [['list'], ['html', { open: 'never' }]],
+  reporter: isCI
+    ? [['blob'], ['allure-playwright'], ['list']]
+    : [['list'], ['html', { open: 'never' }], ['allure-playwright']],
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'retain-on-failure',
@@ -30,9 +32,11 @@ export default defineConfig({
     },
   ],
   projects: [
-  {
-    name: 'chromium',
-    use: { ...devices['Desktop Chrome'], channel: process.env.PW_CHANNEL || undefined },
-  },
-],
+    {
+      name: 'chromium',
+      // Locally on a locked-down machine: set PW_CHANNEL=msedge to use the installed Edge.
+      // CI leaves it unset and uses Playwright's bundled Chromium.
+      use: { ...devices['Desktop Chrome'], channel: process.env.PW_CHANNEL || undefined },
+    },
+  ],
 });

@@ -1,14 +1,22 @@
 {
   "name": "fx-rates-test-automation",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A React + GraphQL FX rates app and the test automation framework built around it.",
   "workspaces": ["apps/*", "tests/*"],
   "engines": { "node": ">=20" },
   "scripts": {
     "dev:server": "npm run dev -w apps/graphql-server",
     "dev:web": "npm run dev -w apps/web",
+    "test": "npm run test:component && npm run test:api && npm run test:e2e",
+    "test:component": "npm test -w apps/web",
+    "test:api": "npm test -w tests/api",
     "test:e2e": "npm test -w tests/e2e",
-    "test:e2e:ui": "npm run test:ui -w tests/e2e"
+    "test:e2e:ui": "npm run test:ui -w tests/e2e",
+    "report:allure": "node scripts/merge-allure-results.mjs && allure generate ./allure-results",
+    "report:allure:open": "allure open ./allure-report"
+  },
+  "devDependencies": {
+    "allure": "^3.0.0"
   }
 }
