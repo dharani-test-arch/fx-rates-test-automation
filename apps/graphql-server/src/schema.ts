@@ -11,14 +11,18 @@ export const typeDefs = `#graphql
     "All supported currency codes."
     currencies: [String!]!
     "Rates of every other currency against the given base currency."
-    rates(currency: String!): [ExchangeRate!]!
+    rates(base: String!): [ExchangeRate!]!  
+    # DEMO: we keep the old field signature for now for backward compatibility
+    # rates(currency: String!): [ExchangeRate!]!
   }
 `;
 
 export const resolvers = {
   Query: {
     currencies: () => CURRENCIES,
-    rates: (_: unknown, { currency }: { currency: string }) => {
+    // in the resolver
+    rates: (_: unknown, { base: currency }: { base: string }) => {
+    // rates: (_: unknown, { currency }: { currency: string }) => {
       const base = currency.toUpperCase();
       if (!(base in USD_RATES)) {
         throw new GraphQLError(`Unsupported currency: ${currency}`, {
