@@ -6,8 +6,15 @@ tests/*/test-results
 tests/*/playwright-report
 tests/*/blob-report
 tests/*/all-blob-reports
+# Visual baselines are Linux-only (generated in CI); ignore any local OS variants
+tests/e2e/specs/visual.spec.ts-snapshots/*-win32.png
+tests/e2e/specs/visual.spec.ts-snapshots/*-darwin.png
 # Allure
 allure-results
 allure-report
 tests/*/allure-results
 apps/*/allure-results
+# Metrics and perf output
+metrics
+lhci-results
+perf-summary.json

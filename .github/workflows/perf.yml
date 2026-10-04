@@ -1,0 +1,92 @@
+name: perf
+
+on:
+  pull_request:
+  schedule:
+    - cron: '0 2 * * *' # nightly, 02:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: perf-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  k6-smoke:
+    name: k6 smoke (PR gate)
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: grafana/setup-k6-action@v1
+      - name: Start GraphQL server
+        run: |
+          nohup npm run start -w apps/graphql-server > server.log 2>&1 &
+          npx --yes wait-on@8 tcp:4000 --timeout 60000
+      - name: Run smoke test
+        run: k6 run --summary-export=perf-summary.json perf/k6/smoke.js
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: k6-smoke-summary
+          path: perf-summary.json
+          retention-days: 14
+
+  k6-load:
+    name: k6 load (nightly)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: grafana/setup-k6-action@v1
+      - name: Start GraphQL server
+        run: |
+          nohup npm run start -w apps/graphql-server > server.log 2>&1 &
+          npx --yes wait-on@8 tcp:4000 --timeout 60000
+      - name: Run load test
+        run: k6 run --summary-export=perf-summary.json perf/k6/load.js
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: k6-load-summary
+          path: perf-summary.json
+          retention-days: 30
+
+  lighthouse:
+    name: lighthouse (PR gate)
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build the production bundle
+        run: npm run build -w apps/web
+      - name: Start API and preview server
+        run: |
+          nohup npm run start -w apps/graphql-server > server.log 2>&1 &
+          nohup npm run preview -w apps/web > preview.log 2>&1 &
+          npx --yes wait-on@8 tcp:4000 tcp:5173 --timeout 60000
+      - name: Run Lighthouse CI
+        run: npx --yes @lhci/cli@0.14.x autorun --config=perf/lighthouserc.json
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: lighthouse-results
+          path: lhci-results
+          retention-days: 14

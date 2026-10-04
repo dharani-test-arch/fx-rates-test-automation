@@ -81,7 +81,7 @@ jobs:
         run: npm exec -w tests/e2e -- playwright install-deps chromium
 
       - name: Run tests (shard ${{ matrix.shard }}/2)
-        run: npm exec -w tests/e2e -- playwright test --shard=${{ matrix.shard }}/2
+        run: npm exec -w tests/e2e -- playwright test --project=chromium --shard=${{ matrix.shard }}/2
 
       - name: Upload blob report
         if: ${{ !cancelled() }}
@@ -104,6 +104,59 @@ jobs:
           name: test-results-${{ matrix.shard }}
           path: tests/e2e/test-results
           retention-days: 7
+
+  visual:
+    name: visual regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      # Until baselines exist this job passes with a warning instead of failing every build.
+      - name: Check for baselines
+        id: baselines
+        run: |
+          if ls tests/e2e/specs/visual.spec.ts-snapshots/*-linux.png >/dev/null 2>&1; then
+            echo "exist=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No visual baselines yet. Run the 'update visual baselines' workflow to create them."
+          fi
+      - uses: actions/setup-node@v4
+        if: steps.baselines.outputs.exist == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - if: steps.baselines.outputs.exist == 'true'
+        run: npm ci
+      - name: Cache Playwright browsers
+        if: steps.baselines.outputs.exist == 'true'
+        uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install browsers
+        if: steps.baselines.outputs.exist == 'true' && steps.pw-cache.outputs.cache-hit != 'true'
+        run: npm exec -w tests/e2e -- playwright install --with-deps chromium
+      - name: Install system deps only (browsers cached)
+        if: steps.baselines.outputs.exist == 'true' && steps.pw-cache.outputs.cache-hit == 'true'
+        run: npm exec -w tests/e2e -- playwright install-deps chromium
+      - name: Run visual tests
+        if: steps.baselines.outputs.exist == 'true'
+        run: npm exec -w tests/e2e -- playwright test --project=visual
+      - name: Upload Allure results
+        if: ${{ !cancelled() && steps.baselines.outputs.exist == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-visual
+          path: tests/e2e/allure-results
+          retention-days: 7
+      - name: Upload expected / actual / diff images
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diffs
+          path: tests/e2e/test-results
+          retention-days: 14
 
   merge-reports:
     name: merge playwright reports
@@ -130,9 +183,9 @@ jobs:
           retention-days: 14
 
   allure-report:
-    name: build allure report
+    name: allure report + quality metrics
     if: ${{ !cancelled() }}
-    needs: [component, api, e2e]
+    needs: [component, api, e2e, visual]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -146,8 +199,28 @@ jobs:
           path: allure-results
           pattern: allure-results-*
           merge-multiple: true
+
+      # History lives on the published Pages site, so no database, token, or bot commit is needed.
+      - name: Load metrics history from the published site
+        run: |
+          mkdir -p metrics
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          REPO="${GITHUB_REPOSITORY#*/}"
+          curl -fsSL "https://${OWNER}.github.io/${REPO}/metrics/history.json" -o metrics/history.json \
+            || echo '{"runs":[],"names":{}}' > metrics/history.json
+      - name: Record this run (main only, so PR runs don't skew the history)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: node scripts/quality-metrics.mjs record allure-results --history metrics/history.json
+      - name: Quality metrics in the run summary
+        run: node scripts/quality-metrics.mjs report --history metrics/history.json >> "$GITHUB_STEP_SUMMARY"
+
       - name: Generate Allure report
         run: npx allure generate ./allure-results
+      - name: Publish metrics alongside the report
+        run: |
+          mkdir -p allure-report/metrics
+          cp metrics/history.json allure-report/metrics/history.json
+
       - name: Upload report (pull requests)
         if: github.ref != 'refs/heads/main'
         uses: actions/upload-artifact@v4
