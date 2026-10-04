@@ -10,3 +10,4 @@ tests/*/all-blob-reports
 allure-results
 allure-report
 tests/*/allure-results
+apps/*/allure-results

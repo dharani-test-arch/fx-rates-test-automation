@@ -12,7 +12,11 @@ export const currenciesMock = (currencies = ALL_CURRENCIES): MockedResponse => (
 
 export const ratesMock = (currency: string, rates: Rate[]): MockedResponse => ({
   request: { query: GET_RATES, variables: { currency } },
-  result: { data: { rates } },
+  result: {
+    data: {
+      rates: rates.map((r) => ({ __typename: 'ExchangeRate', ...r })),
+    },
+  },
 });
 
 export const ratesErrorMock = (currency: string, error: Error): MockedResponse => ({

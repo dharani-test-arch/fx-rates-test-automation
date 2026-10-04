@@ -8,7 +8,7 @@ import { ALL_CURRENCIES, currenciesMock } from '../test/mocks';
 
 function renderSelect(mocks: MockedResponse[], onChange = vi.fn()) {
   render(
-    <MockedProvider mocks={mocks} addTypename={false}>
+    <MockedProvider mocks={mocks}>
       <CurrencySelect value="USD" onChange={onChange} />
     </MockedProvider>,
   );

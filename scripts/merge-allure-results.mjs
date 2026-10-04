@@ -8,7 +8,7 @@ rmSync(out, { recursive: true, force: true });
 rmSync('allure-report', { recursive: true, force: true });
 mkdirSync(out);
 
-for (const suite of ['tests/api', 'tests/e2e']) {
+for (const suite of ['apps/web', 'tests/api', 'tests/e2e']) {
   const dir = join(suite, 'allure-results');
   if (existsSync(dir)) {
     cpSync(dir, out, { recursive: true });

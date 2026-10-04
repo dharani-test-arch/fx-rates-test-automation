@@ -16,7 +16,8 @@ export default defineConfig({
   preview: { proxy },
   test: {
     environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
+    setupFiles: ['allure-vitest/setup', './src/test/setup.ts'],
+    reporters: ['verbose', ['allure-vitest/reporter', { resultsDir: 'allure-results' }]],
     css: false,
   },
 });

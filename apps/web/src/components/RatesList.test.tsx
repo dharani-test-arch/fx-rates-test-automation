@@ -8,7 +8,7 @@ import { USD_RATES, ratesErrorMock, ratesMock } from '../test/mocks';
 
 function renderList(mocks: MockedResponse[], filter = '') {
   return render(
-    <MockedProvider mocks={mocks} addTypename={false}>
+    <MockedProvider mocks={mocks}>
       <RatesList base="USD" filter={filter} />
     </MockedProvider>,
   );

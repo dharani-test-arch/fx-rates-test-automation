@@ -14,7 +14,6 @@ function renderApp() {
   return render(
     <MockedProvider
       mocks={[currenciesMock(), ratesMock('USD', USD_RATES), ratesMock('EUR', EUR_RATES)]}
-      addTypename={false}
     >
       <App />
     </MockedProvider>,
