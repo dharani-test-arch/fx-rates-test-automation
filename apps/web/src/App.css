@@ -11,7 +11,8 @@
 * { box-sizing: border-box; }
 body { margin: 0; }
 main { max-width: 36rem; margin: 3rem auto; padding: 0 1.25rem; }
-h1 { font-size: 1.75rem; margin: 0 0 .25rem; letter-spacing: -0.01em; }
+/* h1 { font-size: 1.75rem; margin: 0 0 .25rem; letter-spacing: -0.01em; } */
+h1 { font-size: 2.25rem; margin: 0 0 .25rem; letter-spacing: -0.01em; }   /* was 1.75rem */
 .lede { margin: 0 0 1.75rem; color: var(--muted); }
 .controls { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
 .field { display: flex; flex-direction: column; gap: .35rem; font-size: .875rem; color: var(--muted); flex: 1 1 10rem; }
